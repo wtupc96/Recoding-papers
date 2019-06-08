@@ -15,7 +15,7 @@ mnist = input_data.read_data_sets(train_dir=MNIST_DATASET, one_hot=True)
 parser = argparse.ArgumentParser()
 parser.add_argument('--temperature', '-T', type=int, required=True, help='The temperature for DISTILLING.')
 parser.add_argument('--batch_size', '-B', type=int, default=1000, help='The batch size of taking images in.')
-parser.add_argument('--epoch', '-E', type=int, default=10000, help='The training epoch.')
+parser.add_argument('--epoch', '-E', type=int, default=600, help='The training epoch.')
 args = parser.parse_args()
 
 
@@ -23,16 +23,16 @@ def net(inputs, temperature: int, net_name: str):
     if net_name == 'teacher':
         num_output = 1200
         norm_fn = slim.batch_norm
-        do_dropout = True
+        do_dropout = False
     elif net_name == 'student':
-        num_output = 800
-        norm_fn = None
+        num_output = 50
+        norm_fn = slim.batch_norm
         do_dropout = False
     else:
         raise Exception('Unrecognized NET.')
 
-    with tf.name_scope(name=net_name):
-        with slim.arg_scope([slim.fully_connected], num_output=num_output, normalizer_fn=norm_fn):
+    with tf.variable_scope(name_or_scope=net_name):
+        with slim.arg_scope([slim.fully_connected], num_outputs=num_output, normalizer_fn=norm_fn):
             fc1 = slim.fully_connected(inputs=inputs, scope='fc1')
             fc2 = slim.fully_connected(inputs=fc1, scope='fc2')
             output = slim.fully_connected(inputs=fc2, num_outputs=10, scope='output')
@@ -55,34 +55,51 @@ def train():
     temperature = args.temperature
     X = tf.placeholder(dtype=tf.float32, shape=[None, 784], name='X')
     Y = tf.placeholder(dtype=tf.float32, shape=[None, 10], name='Y')
-    output4acc = tf.placeholder(dtype=tf.float32, shape=[None, 10], name='output4acc')
 
     output_teacher = teacher_net(X, temperature)
     output_student = student_net(X, temperature)
 
-    loss_teacher = tf.nn.softmax_cross_entropy_with_logits_v2(labels=output_teacher, logits=Y)
-    loss_student = tf.nn.softmax_cross_entropy_with_logits_v2(labels=output_student, logits=Y)
+    loss_teacher = slim.losses.softmax_cross_entropy(logits=output_teacher, onehot_labels=Y, scope='loss_teacher')
+    loss_student = slim.losses.softmax_cross_entropy(logits=output_student, onehot_labels=Y, scope='loss_student')
 
-    optimizer = tf.train.AdamOptimizer()
-    opt_teacher = optimizer.minimize(loss_teacher)
-    opt_student = optimizer.minimize(loss_student)
+    vars = tf.trainable_variables()
 
-    correct_prediction = tf.equal(tf.arg_max(Y, 1), tf.arg_max(output4acc, 1))
-    accuracy = tf.reduce_mean(tf.cast(correct_prediction, tf.float32))
+    vars_teacher = [v for v in vars if 'teacher' in v.name]
+    vars_student = [v for v in vars if 'student' in v.name]
 
+    print(vars_teacher)
+    print()
+    print(vars_student)
+    print()
+
+    optimizer = tf.train.AdamOptimizer(learning_rate=1)
+    optimizer2 = tf.train.AdamOptimizer(learning_rate=1)
+
+    opt_teacher = optimizer.minimize(loss_teacher, var_list=vars_teacher)
+    opt_student = optimizer2.minimize(loss_student, var_list=vars_student)
+
+    correct_prediction_teacher = tf.equal(tf.argmax(Y, 1), tf.argmax(output_teacher, 1))
+    correct_prediction_student = tf.equal(tf.argmax(Y, 1), tf.argmax(output_student, 1))
+
+    accuracy_teacher = tf.reduce_mean(tf.cast(correct_prediction_teacher, tf.float32))
+    accuracy_student = tf.reduce_mean(tf.cast(correct_prediction_student, tf.float32))
+
+    init_vars = tf.global_variables_initializer()
     with tf.Session() as sess:
+        sess.run(init_vars)
+
         for cnt in range(args.epoch):
             train_images, train_labels = mnist.train.next_batch(args.batch_size)
-            cost_student, _ = sess.run([loss_student, opt_student], feed_dict={X: train_images, Y: train_labels})
             cost_teacher, _ = sess.run([loss_teacher, opt_teacher], feed_dict={X: train_images, Y: train_labels})
+            cost_student, _ = sess.run([loss_student, opt_student], feed_dict={X: train_images, Y: train_labels})
             if cnt % 100 == 0:
-                print(cost_student)
                 print(cost_teacher)
+                print(cost_student)
                 print()
-        acc_teacher = sess.run(accuracy,
-                               feed_dict={X: mnist.test.images, Y: mnist.test.labels, output4acc: output_teacher})
-        acc_student = sess.run(accuracy,
-                               feed_dict={X: mnist.test.images, Y: mnist.test.labels, output4acc: output_student})
+        acc_teacher = sess.run(accuracy_teacher,
+                               feed_dict={X: mnist.test.images, Y: mnist.test.labels})
+        acc_student = sess.run(accuracy_student,
+                               feed_dict={X: mnist.test.images, Y: mnist.test.labels})
         print(acc_teacher)
         print(acc_student)
 

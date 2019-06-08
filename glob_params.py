@@ -1,6 +1,6 @@
 import os
 
-ROOT = os.getcwd()
+ROOT = r'F:\recoding_papers'
 
 # Dataset Paths.
 DATASET_ROOT = os.path.join(ROOT, 'dataset')
