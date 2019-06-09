@@ -3,19 +3,19 @@ import sys
 sys.path.append(r'F:\recoding_papers')
 
 import argparse
-
 import tensorflow as tf
 import tensorflow.contrib.slim as slim
-from tensorflow.examples.tutorials.mnist import input_data
+from tensorflow.contrib.learn.python.learn.datasets.mnist import read_data_sets
 
 from glob_params import MNIST_DATASET
 
-mnist = input_data.read_data_sets(train_dir=MNIST_DATASET, one_hot=True)
+mnist = read_data_sets(train_dir=MNIST_DATASET, one_hot=True)
 
 parser = argparse.ArgumentParser()
 parser.add_argument('--temperature', '-T', type=int, required=True, help='The temperature for DISTILLING.')
-parser.add_argument('--batch_size', '-B', type=int, default=1000, help='The batch size of taking images in.')
+parser.add_argument('--batch_size', '-B', type=int, default=100, help='The batch size of taking images in.')
 parser.add_argument('--epoch', '-E', type=int, default=600, help='The training epoch.')
+
 args = parser.parse_args()
 
 
