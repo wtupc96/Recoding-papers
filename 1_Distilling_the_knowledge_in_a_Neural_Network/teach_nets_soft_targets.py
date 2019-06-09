@@ -30,11 +30,11 @@ logger = logging.getLogger(__name__)
 
 def net(inputs, net_name: str):
     if net_name == 'teacher':
-        num_output = 30
+        num_output = 400
         norm_fn = slim.batch_norm
         do_dropout = False
     elif net_name == 'student':
-        num_output = 15
+        num_output = 200
         norm_fn = slim.batch_norm
         do_dropout = False
     else:
@@ -44,14 +44,14 @@ def net(inputs, net_name: str):
         with slim.arg_scope([slim.fully_connected],
                             num_outputs=num_output, normalizer_fn=norm_fn):
             fc1 = slim.fully_connected(inputs=inputs, scope='fc1')
-            # fc2 = slim.fully_connected(inputs=fc1, scope='fc2')
-            output = slim.fully_connected(inputs=fc1,
+            fc2 = slim.fully_connected(inputs=fc1, scope='fc2')
+            output = slim.fully_connected(inputs=fc2,
                                           num_outputs=10,
                                           scope='output',
                                           activation_fn=None,
                                           normalizer_fn=None)
             if do_dropout:
-                output = slim.dropout(inputs=output)
+                output = slim.dropout(inputs=output, keep_prob=0.9)
         return output
 
 
@@ -74,13 +74,9 @@ def train():
     loss_student = slim.losses.softmax_cross_entropy(logits=output_student, onehot_labels=Y, scope='loss_student')
 
     temperature = args.temperature
-    # loss_student_learning = tf.reduce_sum(
-    #     tf.nn.softmax_cross_entropy_with_logits(logits=output_student / temperature,
-    #                                             labels=output_teacher / temperature))
-    # slim.losses.add_loss(loss_student_learning)
-    loss_student_learning = slim.losses.mean_squared_error(predictions=slim.softmax(output_student / temperature),
-                                                           labels=slim.softmax(output_teacher / temperature))
-    # loss_student_learning = slim.losses.softmax_cross_entropy(logits=output_student / temperature, onehot_labels=output_teacher / temperature)
+    loss_student_learning = temperature ** 2 * slim.losses.mean_squared_error(
+        predictions=slim.softmax(output_student / temperature),
+        labels=slim.softmax(output_teacher / temperature))
 
     vars = tf.trainable_variables()
 
@@ -92,8 +88,8 @@ def train():
 
     optimizer = tf.train.AdamOptimizer(learning_rate=0.005)
 
-    opt_teacher = optimizer.minimize(loss_teacher, name='loss_teacher')
-    opt_student = optimizer.minimize(loss_student, name='loss_student')
+    opt_teacher = optimizer.minimize(loss_teacher, var_list=vars_teacher, name='loss_teacher')
+    opt_student = optimizer.minimize(loss_student, var_list=vars_student, name='loss_student')
     opt_student_learning = optimizer.minimize(loss_student_learning, name='loss_student')
 
     correct_prediction_teacher = tf.equal(tf.argmax(Y, 1), tf.argmax(output_teacher, 1))
@@ -105,6 +101,17 @@ def train():
     init_vars = tf.global_variables_initializer()
     with tf.Session() as sess:
         sess.run(init_vars)
+
+        logger.info('Student Net is learning.')
+        for cnt in range(args.epoch_student_individual):
+            train_images, train_labels = mnist.train.next_batch(args.batch_size)
+            _, cost_student = sess.run([opt_student, loss_student],
+                                       feed_dict={X: train_images, Y: train_labels})
+            if cnt % (args.epoch_student_individual // 5 + 1) == 0:
+                logger.info('Student loss: {}'.format(cost_student))
+        acc_student_individual = sess.run(accuracy_student,
+                                          feed_dict={X: mnist.test.images, Y: mnist.test.labels})
+        logger.info('Student INDIVIDUAL Accuarcy: {}'.format(acc_student_individual))
 
         logger.info('Teacher Net is learning.')
         for cnt in range(args.epoch_teacher):
@@ -119,17 +126,6 @@ def train():
         acc_teacher = sess.run(accuracy_teacher,
                                feed_dict={X: mnist.test.images, Y: mnist.test.labels})
         logger.info('Teacher Accuracy: {}'.format(acc_teacher))
-
-        logger.info('Student Net is learning.')
-        for cnt in range(args.epoch_student_individual):
-            train_images, train_labels = mnist.train.next_batch(args.batch_size)
-            _, cost_student = sess.run([opt_student, loss_student],
-                                       feed_dict={X: train_images, Y: train_labels})
-            if cnt % (args.epoch_student_individual // 5 + 1) == 0:
-                logger.info('Student loss: {}'.format(cost_student))
-        acc_student_individual = sess.run(accuracy_student,
-                                          feed_dict={X: mnist.test.images, Y: mnist.test.labels})
-        logger.info('Student INDIVIDUAL Accuarcy: {}'.format(acc_student_individual))
 
         logger.info('Teacher is teaching Student.')
         for cnt in range(args.epoch_student_learning):
