@@ -17,11 +17,11 @@ parser.add_argument('--temperature', '-T', type=float, default=-1,
                     help='The temperature for DISTILLING.')
 parser.add_argument('--batch_size', '-B', type=int, default=1000,
                     help='The batch size of taking images in.')
-parser.add_argument('--epoch_teacher', '-ET', type=int, default=3000,
+parser.add_argument('--epoch_teacher', '-ET', type=int, default=500,
                     help='The training epoch for teacher net.')
-parser.add_argument('--epoch_student_individual', '-ESI', type=int, default=300,
+parser.add_argument('--epoch_student_individual', '-ESI', type=int, default=500,
                     help='The individual training epoch for student net.')
-parser.add_argument('--epoch_student_learning', '-ESL', type=int, default=600,
+parser.add_argument('--epoch_student_learning', '-ESL', type=int, default=100,
                     help='The learning from teacher training epoch for student net.')
 
 args = parser.parse_args()
@@ -30,6 +30,12 @@ logger = logging.getLogger(__name__)
 
 
 def net(inputs, net_name: str):
+    """
+    Network architecture template.
+    :param inputs: Network input
+    :param net_name: Network name for var_scope
+    :return: Network output
+    """
     if 'teacher' in net_name:
         num_output = 50
         norm_fn = slim.batch_norm
@@ -57,10 +63,22 @@ def net(inputs, net_name: str):
 
 
 def teacher_net(inputs, identifier: str):
+    """
+    Build the Teacher Network.
+    :param inputs: Teacher Network inputs
+    :param identifier: The one and only identifier for Teacher Network
+    :return: Teacher Network outputs
+    """
     return net(inputs=inputs, net_name='teacher' + identifier)
 
 
 def student_net(inputs, identifier: str):
+    """
+    Build the Student Network.
+    :param inputs: Student Network inputs
+    :param identifier: The one and only identifier for Student Network
+    :return: Student Network outputs
+    """
     return net(inputs=inputs, net_name='student' + identifier)
 
 
@@ -69,6 +87,15 @@ def train(temperature: float,
           epoch_teacher: int,
           epoch_student_individual: int,
           epoch_student_learning: int):
+    """
+    Train Teacher and Student Network.
+    :param temperature: Temperature for distilling
+    :param batch_size: batch size for MNIST
+    :param epoch_teacher: Training epoch of Teacher Network
+    :param epoch_student_individual: Training epoch of Student Network
+    :param epoch_student_learning: Teaching epoch of Student Network
+    :return: Enhancement of the accuracy of Student Network
+    """
     tf.set_random_seed(1)
 
     X = tf.placeholder(dtype=tf.float32, shape=[None, 784], name='X')
@@ -155,12 +182,14 @@ if __name__ == '__main__':
     epoch_student_individual = args.epoch_student_individual
     epoch_student_learning = args.epoch_student_learning
 
+    # If temperature > 0, calculate the enhancement under cmd params; else draw the fig.
     if temperature > 0:
         logger.info('Calc the enhancement.')
         train(temperature, batch_size, epoch_teacher, epoch_student_individual, epoch_student_learning)
     else:
         import numpy as np
         from matplotlib import pyplot as plt
+
         logger.info('Draw the relationship between T and according enhancement.')
         x = np.linspace(-10, 100, num=300)
         y = list()
