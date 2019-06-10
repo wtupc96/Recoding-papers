@@ -212,7 +212,7 @@ if __name__ == '__main__':
 
         logger.info('Draw the relationship between T and according enhancement.')
         start = 0 if os.path.exists(CKPT_VALID) else 1
-        x = np.linspace(0, 4, num=10)
+        x = np.linspace(-10, 10, num=1000)
         y = list()
         for temperature in x:
             y.append(train(temperature, batch_size, epoch_teacher, epoch_student_individual, epoch_student_learning))
