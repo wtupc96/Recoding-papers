@@ -5,5 +5,9 @@
 /__pycache__
 /*/__pycache__
 
+# Checkpoint files
+/*/checkpoint
+/*/*.ckpt.*
+
 # Dataset files
 /dataset

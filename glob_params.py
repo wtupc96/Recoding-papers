@@ -6,3 +6,4 @@ ROOT = r'F:\recoding_papers'
 DATASET_ROOT = os.path.join(ROOT, 'dataset')
 
 MNIST_DATASET = os.path.join(DATASET_ROOT, 'mnist')
+CIFAR10_DATASET = os.path.join(DATASET_ROOT, 'cifar-10-batches-py')
