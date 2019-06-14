@@ -6,8 +6,7 @@ import argparse
 import tensorflow as tf
 import tensorflow.contrib.slim as slim
 from tensorflow.contrib.learn.python.learn.datasets.mnist import read_data_sets
-import logging
-from glob_params import MNIST_DATASET
+from glob_params import MNIST_DATASET, logger
 import os
 
 mnist = read_data_sets(train_dir=MNIST_DATASET, one_hot=True)
@@ -25,8 +24,6 @@ parser.add_argument('--epoch_student_learning', '-ESL', type=int, default=200,
                     help='The learning from teacher training epoch for student net.')
 
 args = parser.parse_args()
-logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(name)s - %(levelname)s - %(message)s')
-logger = logging.getLogger(__name__)
 
 CKPT = os.path.join('.', 'teach.ckpt')
 CKPT_VALID = os.path.join('.', 'checkpoint')
