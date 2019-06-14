@@ -14,7 +14,7 @@ epoch = 100
 
 mnist = read_data_sets(train_dir=MNIST_DATASET, one_hot=True)
 
-CKPT = os.path.join('.', 'teach.ckpt')
+CKPT = os.path.join('.', 'visual.ckpt')
 CKPT_VALID = os.path.join('.', 'checkpoint')
 
 
@@ -35,6 +35,7 @@ def net(input):
         conv2 = conv2d(conv1, 64, 3, 3, 2, 2, 'SAME', True, True, 'conv2')
         print(conv2.shape)
         conv3 = conv2d(conv2, 64, 3, 3, 2, 2, 'SAME', True, True, 'conv3')
+        print(conv3.shape)
         conv_output = tf.layers.flatten(inputs=conv3, name='flatten')
         print(conv_output.shape)
         fc1 = tf.contrib.layers.fully_connected(inputs=conv_output, num_outputs=100,
@@ -46,7 +47,7 @@ def net(input):
 
         output = tf.contrib.layers.fully_connected(inputs=fc1, num_outputs=10, activation_fn=None)
         print(output.shape)
-        return output
+        return conv1, conv2, conv3, output
 
 
 def conv2d(input, output_ch, f_h, f_w, s_h, s_w, padding, do_norm, do_relu, name):
@@ -79,7 +80,7 @@ def train():
     X = tf.reshape(image, shape=[batch_size, 28, 28, 1])
     Y = tf.placeholder(dtype=tf.uint8, shape=[batch_size, 10], name='label')
 
-    output = net(X)
+    conv1, conv2, conv3, output = net(X)
     loss = tf.reduce_mean(tf.nn.softmax_cross_entropy_with_logits(logits=output, labels=Y))
 
     opt = tf.train.AdamOptimizer(0.01).minimize(loss)
@@ -110,6 +111,8 @@ def train():
             logger.info('ACC: %.2f' % accuracy)
         else:
             saver.restore(sess, CKPT)
+            image_conv3 = sess.run(conv3, feed_dict={image: mnist.test.images[:batch_size]})
+            return image_conv3[0]
 
 
 if __name__ == '__main__':
