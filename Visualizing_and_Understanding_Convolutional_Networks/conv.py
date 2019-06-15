@@ -6,8 +6,7 @@ import os
 import tensorflow as tf
 from glob_params import MNIST_DATASET, logger
 from tensorflow.contrib.learn.python.learn.datasets.mnist import read_data_sets
-
-tf.set_random_seed(1)
+import numpy as np
 
 batch_size = 1000
 epoch = 100
@@ -111,8 +110,22 @@ def train():
             logger.info('ACC: %.2f' % accuracy)
         else:
             saver.restore(sess, CKPT)
-            image_conv3 = sess.run(conv3, feed_dict={image: mnist.test.images[:batch_size]})
-            return image_conv3[0]
+            batch_num = mnist.test.num_examples // batch_size
+            import random
+            batch_idx = random.randint(0, batch_num - 1)
+            print(batch_idx)
+            image_conv1, image_conv2, image_conv3 = sess.run([conv1, conv2, conv3],
+                                                             feed_dict=
+                                                             {image:
+                                                                  mnist.test.images[batch_idx * batch_size:
+                                                                                    (batch_idx + 1) * batch_size]})
+
+            random_idx = random.randint(0, batch_size - 1)
+            print(random_idx)
+            return np.array(mnist.test.images[batch_idx * batch_size + random_idx]).reshape(28, 28, 1) * 255, \
+                   image_conv1[random_idx], \
+                   image_conv2[random_idx], \
+                   image_conv3[random_idx]
 
 
 if __name__ == '__main__':
