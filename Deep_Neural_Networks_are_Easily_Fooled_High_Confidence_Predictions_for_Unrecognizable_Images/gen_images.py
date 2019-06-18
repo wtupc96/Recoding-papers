@@ -87,7 +87,7 @@ if __name__ == '__main__':
     if not os.path.exists(CKPT_VALID):
         train(None, None, False)
 
-    sample_num = 100
+    sample_num = 500
     valid_idx = [1] * sample_num
     samples = np.random.randint(low=0, high=256, size=[sample_num, 784]) / 255
     clean_rate = 0.01
@@ -95,7 +95,7 @@ if __name__ == '__main__':
     keep_rate = 0.05
     while sum(valid_idx) >= int(keep_rate * sample_num):
         print(sum(valid_idx))
-        costs = train(samples, 1, False)
+        costs = train(samples, 5, False)
         costs = np.reshape(costs, newshape=[sample_num, -1])
         costs = map(sum, costs)
         costs = list(costs)
@@ -137,14 +137,15 @@ if __name__ == '__main__':
         mutation_sample = np.random.randint(low=0, high=11, size=[sample_num])
         for idx in range(len(mutation_sample)):
             if valid_idx[idx] == 1:
-                if mutation_sample[idx] > 0:
+                if mutation_sample[idx] > 7:
                     m_rate = mutation[idx]
                     for mr_idx in range(len(m_rate)):
-                        if m_rate[mr_idx] > 0:
+                        if m_rate[mr_idx] > 8:
                             samples[idx][mr_idx] = 1 - samples[idx][mr_idx]
-    max_cost = max(costs)
-    pred = train(np.reshape(samples[costs.index(max_cost)], newshape=[1, -1]).repeat(1000, axis=0), None, True)
+    min_cost = min(costs)
+    # pred = train(samples, None, True)
+    pred = train(np.reshape(samples[costs.index(min_cost)], newshape=[1, -1]).repeat(1000, axis=0), None, True)
     print(pred)
     import cv2
 
-    cv2.imwrite('5.jpg', np.reshape(samples[costs.index(max_cost)] * 255, newshape=[28, 28, 1]))
+    cv2.imwrite('5.jpg', np.reshape(samples[costs.index(min_cost)] * 255, newshape=[28, 28, 1]))
