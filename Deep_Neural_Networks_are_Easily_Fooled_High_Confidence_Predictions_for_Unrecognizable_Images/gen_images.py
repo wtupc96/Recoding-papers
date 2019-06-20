@@ -34,7 +34,6 @@ def net(inputs):
 
 
 def train(gen_image, target, make_pred):
-    # tf.set_random_seed(1)
     tf.reset_default_graph()
 
     if os.path.exists(CKPT_VALID):
@@ -74,9 +73,14 @@ def train(gen_image, target, make_pred):
             if not make_pred:
                 one_hot_tensor = sess.run(tf.one_hot(target, depth=10))
                 one_hot_tensor = np.reshape(one_hot_tensor, newshape=[1, -1]).repeat(len(samples), axis=0)
-                loss_not_sum = tf.nn.softmax_cross_entropy_with_logits_v2(logits=output, labels=Y)
-                cost = sess.run(loss_not_sum, feed_dict={X: gen_image, Y: one_hot_tensor})
-                return cost
+
+                loss_sq = tf.squared_difference(x=tf.nn.softmax(output), y=Y)
+
+                cost, outputs = sess.run([loss_sq, tf.nn.softmax(output)], feed_dict={X: gen_image, Y: one_hot_tensor})
+                print(gen_image.shape)
+                print(cost.shape)
+                print(one_hot_tensor.shape)
+                return cost, outputs
             else:
                 pred = sess.run(output, feed_dict={X: gen_image})
                 pred = np.argmax(pred, axis=1)
@@ -87,19 +91,26 @@ if __name__ == '__main__':
     if not os.path.exists(CKPT_VALID):
         train(None, None, False)
 
-    sample_num = 500
+    sample_num = 100
     valid_idx = [1] * sample_num
     samples = np.random.randint(low=0, high=256, size=[sample_num, 784]) / 255
     clean_rate = 0.01
     cross_rate = 0.4
-    keep_rate = 0.05
+    keep_rate = 0.01
     while sum(valid_idx) >= int(keep_rate * sample_num):
         print(sum(valid_idx))
-        costs = train(samples, 5, False)
+        costs, outputs = train(samples, 8, False)
         costs = np.reshape(costs, newshape=[sample_num, -1])
         costs = map(sum, costs)
         costs = list(costs)
-        print(min(costs))
+        min_idx = costs.index(min(costs))
+        print(costs[min_idx])
+        print(outputs[min_idx])
+
+        print(valid_idx[min_idx])
+        preds = 'PRED:::: ', train(samples, None, True)
+
+        print(min_idx)
 
         clean_sample = math.ceil(clean_rate * sum(valid_idx))
         sorted_costs = sorted(costs)
@@ -143,9 +154,8 @@ if __name__ == '__main__':
                         if m_rate[mr_idx] > 8:
                             samples[idx][mr_idx] = 1 - samples[idx][mr_idx]
     min_cost = min(costs)
-    # pred = train(samples, None, True)
-    pred = train(np.reshape(samples[costs.index(min_cost)], newshape=[1, -1]).repeat(1000, axis=0), None, True)
+    pred = train(np.reshape(samples[costs.index(min_cost)], newshape=[1, -1]), None, True)
     print(pred)
     import cv2
 
-    cv2.imwrite('5.jpg', np.reshape(samples[costs.index(min_cost)] * 255, newshape=[28, 28, 1]))
+    cv2.imwrite('8.jpg', np.reshape(samples[costs.index(min_cost)] * 255, newshape=[28, 28, 1]))
