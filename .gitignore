@@ -1,6 +1,9 @@
 # Pycharm files
 /.idea
 
+# Model files
+/model
+
 # Python compiled files
 /__pycache__
 /*/__pycache__
