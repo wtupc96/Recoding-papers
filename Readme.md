@@ -11,6 +11,6 @@ This repo contains codes described in some classical deep learning papers.
 5. CNN Features off-the-shelf: an Astounding Baseline for Recognition[[pdf]](<https://arxiv.org/pdf/1403.6382.pdf>)
 6. DeCAF: A Deep Convolutional Activation Feature for Generic Visual Recognition[[pdf]](<https://arxiv.org/pdf/1310.1531.pdf>)
 7. Return of the Devil in the Details: Delving Deep into Convolutional Nets[[pdf]](<https://arxiv.org/pdf/1405.3531.pdf>)
-
 8. Maxout Networks[[pdf]](<https://arxiv.org/pdf/1302.4389.pdf>)
-
+9. OverFeat: Integrated Recognition, Localization and Detection using Convolutional Networks[[pdf]](<https://arxiv.org/pdf/1312.6229.pdf>)
+10. Learning a Similarity Metric Discriminatively, with Application to Face Verification[[pdf]](<http://yann.lecun.com/exdb/publis/pdf/chopra-05.pdf>)

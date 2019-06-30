@@ -11,7 +11,8 @@ DATASET_ROOT = os.path.join(ROOT, 'dataset')
 MNIST_DATASET = os.path.join(DATASET_ROOT, 'mnist')
 CIFAR10_DATASET = os.path.join(DATASET_ROOT, 'cifar-10-batches-py')
 ENGLISH_HAND_DATASET = os.path.join(DATASET_ROOT, 'EnglishHnd', 'English', 'Hnd')
-
+TINY_IMAGENET_200 = os.path.join(DATASET_ROOT, 'tiny-imagenet-200')
+TINY_IMAGENET_200_TEST = os.path.join(DATASET_ROOT, 'tiny-imagenet-200_test')
 
 # Model Paths
 MODEL_ROOT = os.path.join(ROOT, 'model')

@@ -24,11 +24,13 @@ def predict(is_training, num_classes, preprocessed_inputs):
         net, endpoints = nets.resnet_v2.resnet_v2_152(preprocessed_inputs, num_classes, is_training)
 
     with tf.Session() as sess:
-        init_fn = slim.assign_from_checkpoint_fn(model_path=RESNET_MODEL,
-                                                 var_list=slim.get_variables_to_restore(), ignore_missing_vars=True)
+        # init_fn = slim.assign_from_checkpoint_fn(model_path=RESNET_MODEL,
+        #                                          var_list=slim.get_variables_to_restore(), ignore_missing_vars=True)
         init_op = tf.global_variables_initializer()
         sess.run(init_op)
-        init_fn(session=sess)
+        saver = tf.train.Saver(tf.global_variables())
+        saver.restore(sess, RESNET_MODEL)
+        # init_fn(session=sess)
         result = sess.run(net)
         if not num_classes:
             result = np.reshape(result, newshape=[-1, 2048])
